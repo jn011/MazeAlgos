@@ -14,7 +14,7 @@ def main():
 
     # open given maze.png, if there is an error opening exit.
     try:
-        myimage = Image.open("/media/james/SlowBigMan/MazeSolving/mazes/Daedelus/16x16.png")
+        myimage = Image.open("/media/james/SlowBigMan/MazeSolving/mazes/Daedelus/6x6.png")
     except:
         print("Error with image")
         exit()
@@ -30,5 +30,18 @@ def main():
     # Save final image, concude program.
     myimage.save("/media/james/SlowBigMan/MazeSolving/new.png")
     print("JOB DONE")
+
+    print("MH: " + str(maze.mazeheight) + "  MW: " + str(maze.mazewidth))
+    
+    for x in range(0,maze.mazeheight):
+        for y in range (0,maze.mazewidth):
+            nodeNum = maze.translateFromHeightWidthToNodeNumber(x,y)
+            print(str(x) + ", " + str(y) + ":\t" + str(nodeNum) + "\t (h,w):\t " + str(maze.translateFromNodeNumberToHeightWidth(nodeNum)))
+            
+    
+    # print("0,0: " + str(maze.translateToNodeNumber(0,0)))
+    # print("1,4: " + str(maze.translateToNodeNumber(1,4)))
+    # print("3,4: " + str(maze.translateToNodeNumber(3,4)))
+    # print("12,12: " + str(maze.translateToNodeNumber(12,12)))
 
 main()

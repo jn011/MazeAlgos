@@ -1,17 +1,11 @@
 from PIL import Image
 import numpy as np
 class Maze:
-    class Node:
-        def __init__(self, height, width):
-            self.nodeheight = height
-            self.nodewidth = height
-            self.neighbours = [None]
-            
-
+    #store start and finish as translatedNodeNum for ease of use with adjacency matrix
     def __init__(self, myimage):
         self.mazewidth, self.mazeheight = myimage.size
         self.myimage = myimage
-        #self.adjmatrix = np.full((self.mazeheight, self.mazewidth), False, dtype=bool)
+        self.adjmatrix = np.full((self.mazeheight, self.mazewidth), False, dtype=bool)
         self.start = None
         self.finish = None
     
@@ -20,7 +14,7 @@ class Maze:
             r,g,b = self.myimage.getpixel((y,0)) 
         # Set pixel as start if white in first row of pixels
             if r==g==b and r==255:
-                    self.start = Maze.Node(0, y)
+                    self.start = self.translateFromHeightWidthToNodeNumber(0,y)
                     self.myimage.putpixel((y,0),(51,102,255))
 
     def findEnd(self):
@@ -28,7 +22,7 @@ class Maze:
             r,g,b = self.myimage.getpixel((y,self.mazeheight-1)) 
         # Set pixel as finish if white in last row of pixels. 
             if r==g==b and r==255:
-                    self.finish = Maze.Node(self.mazeheight, y)
+                    self.finish = self.translateFromHeightWidthToNodeNumber(self.mazeheight-1,y)
                     self.myimage.putpixel((y,self.mazeheight-1),(51,102,255))
 
     
@@ -44,6 +38,17 @@ class Maze:
             for y in range(self.mazewidth):
                 if self.isNode(x,y):
                     self.myimage.putpixel((y,x),(51,102,255))
+
+    #Takes an inputted nodes position in terms of height and width and finds its node number  
+    def translateFromHeightWidthToNodeNumber(self, height, width): 
+        nodeNum = (self.mazewidth * height) + width
+        return nodeNum
+
+    #takes a translated node number and converts to given image height and width
+    def translateFromNodeNumberToHeightWidth(self, nodeNumber):
+        height = nodeNumber // self.mazeheight
+        width = nodeNumber % self.mazeheight
+        return [height,width]
 
     # Checks if a given pixel is a node 
     # (junction, dead end, corner) excludes start/end
