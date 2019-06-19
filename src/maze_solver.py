@@ -31,16 +31,15 @@ def main():
 
     maze = Maze(myimage)
     maze.findAllNodes()
-    maze.buildAdjMatrix()
+    maze.buildAdjList()
     print("Graph built for maze on nodes where a decision must be made... ")
     maze.bfsPathFinder()
 
-    # Save final image in current working directory, conclude program
+    # # # Save final image in current working directory, conclude program
     cwd = os.getcwd()
     myimage.save(str(cwd+"/completed_maze.png"))
 
     print("Path found in your maze! \nImage Saved in current directory as: " + cwd + "/completed_maze.png")
-    print("Runtime: ")
 
 # Times the running of main function
 start_time = time.time()

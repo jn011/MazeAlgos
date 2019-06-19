@@ -1,15 +1,14 @@
 from PIL import Image
 from collections import deque
 import numpy as np
-import sys
 
 class Maze:
-    #store start and finish as translatedNodeNum for ease of use with adjacency matrix
+    #store start and finish as translatedNodeNum for ease of use with adjacency list
     def __init__(self, myimage):
         self.mazewidth, self.mazeheight = myimage.size
         self.myimage = myimage
+        self.adjList = {}
         self.nodelist = []
-        self.adjmatrix = np.full((self.mazeheight*self.mazeheight, self.mazeheight*self.mazeheight), False, dtype=bool)
         self.start = None
         self.finish = None
     
@@ -18,16 +17,16 @@ class Maze:
             r,g,b = self.myimage.getpixel((y,0)) 
         # Set pixel as start if white in first row of pixels
             if r==g==b and r==255:
-                    self.addToNodeList(0,y)
-                    self.start = self.translateFromHeightWidthToNodeNumber(0,y)
+                self.addToNodeAdjList(0,y)
+                self.start = self.translateFromHeightWidthToNodeNumber(0,y)
 
     def findEnd(self):
         for y in range(self.mazewidth):
             r,g,b = self.myimage.getpixel((y,self.mazeheight-1)) 
         # Set pixel as finish if white in last row of pixels. 
             if r==g==b and r==255:
-                    self.addToNodeList(self.mazeheight-1,y)
-                    self.finish = self.translateFromHeightWidthToNodeNumber(self.mazeheight-1,y)
+                self.addToNodeAdjList(self.mazeheight-1,y)
+                self.finish = self.translateFromHeightWidthToNodeNumber(self.mazeheight-1,y)
 
     # Loop through image and find all nodes and add to NodeList
     def findAllNodes(self):
@@ -36,25 +35,29 @@ class Maze:
         for x in range(1, self.mazeheight-1):
             for y in range(self.mazewidth):
                 if self.isNode(x,y):
-                    self.addToNodeList(x,y)
+                    self.addToNodeAdjList(x,y)
 
         self.findEnd()
     
-    # Adds a node to the NodeList
-    def addToNodeList(self, height, width):
-        self.nodelist.append(self.translateFromHeightWidthToNodeNumber(height,width))
+    # Add node to adjacency List
+    def addToNodeAdjList(self, height, width):
+        self.adjList[self.translateFromHeightWidthToNodeNumber(height,width)] = []
 
-    #Builds adjacency matrix from nodelist
-    def buildAdjMatrix(self):
-        for currentnode in self.nodelist:            
-            for previousnode in self.nodelist[0:self.nodelist.index(currentnode)]:
-                if(self.isAdjacent(currentnode,previousnode)):
-                    self.setAdjacentInAdjMatrix(currentnode,previousnode) 
+    # Builds adjacency list for maze
+    def buildAdjList(self):
+        for currentnode in self.adjList.keys():
+            for previousnode in self.adjList.keys():
+                if (previousnode < currentnode):
+                    if(self.isAdjacent(currentnode,previousnode)):
+                        self.addAjacencyToAdjList(currentnode,previousnode)
+                else:
+                    break
 
-    #Sets two node numebrs as adjacent in adjacency matrix
-    def setAdjacentInAdjMatrix(self, node1, node2):
-        self.adjmatrix[node1][node2] = True
-        self.adjmatrix[node2][node1] = True
+    #Add adjacent nodes to adjacency list
+    def addAjacencyToAdjList(self, node1, node2):
+        if (node2 not in self.adjList[node1] and node1 not in self.adjList[node2]):
+            self.adjList[node1].append(node2)
+            self.adjList[node2].append(node1)
     
     #Takes an inputted nodes position in terms of height and width and finds its node number  
     def translateFromHeightWidthToNodeNumber(self, height, width): 
@@ -150,9 +153,12 @@ class Maze:
         return False
 
     def bfsPathFinder(self):
-        #Get number of possible nodes and intialize visited as False
-        numNodes = len(self.adjmatrix)
-        visited = np.full(numNodes, False, dtype=bool)
+        #Get number of possible nodes and intialize visited as False, finish is the final node + 1 (includes 0)
+        # and the array will not have to be bigger than that
+        numPossibleNodes = self.finish + 1
+
+        # visited has to be size of numNodes x numNodes as 
+        visited = np.full(numPossibleNodes + 1, False, dtype=bool)
 
         # Queue for BFS 
         visited[self.start] = True
@@ -164,12 +170,11 @@ class Maze:
             currentnode = nodes.popleft()
             
             #Find and check children of current node, if not visited enqueue and set node visited
-            for i in range(1,numNodes):
+            for i in self.adjList[currentnode]:
                 if (not visited[i]):
-                    if (self.adjmatrix[currentnode][i]):
-                        visited[i] = True
-                        nodes.append(i)
-                        parent[i] = currentnode
+                    visited[i] = True
+                    nodes.append(i)
+                    parent[i] = currentnode
 
         # backtrace from parent nodes and build path from parents dictionary
         path = [self.finish]
@@ -177,12 +182,10 @@ class Maze:
             path.append(parent[path[-1]])
             path.reverse()
 
-        # Trim path 
+        # Trim path from beginning to end and draw path on image
         endofpath = path.index(self.finish) + 1
         path = path[0:endofpath]
         self.drawPath(path)
-
-
 
     def drawPath(self, path):
         for i in range(len(path)):
