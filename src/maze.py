@@ -1,6 +1,8 @@
 from PIL import Image
 from collections import deque
 import numpy as np
+import math
+import queue
 
 class Maze:
     #store start and finish as translatedNodeNum for ease of use with adjacency list
@@ -8,7 +10,7 @@ class Maze:
         self.mazewidth, self.mazeheight = myimage.size
         self.myimage = myimage
         self.adjList = {}
-        self.nodelist = []
+        # self.nodelist = []
         self.start = None
         self.finish = None
     
@@ -53,7 +55,7 @@ class Maze:
                 else:
                     break
 
-    #Add adjacent nodes to adjacency list
+    #Add adjacent nodes to adjacency list as well as distance between points in a tuple(adjacent node, distance to node)
     def addAjacencyToAdjList(self, node1, node2):
         if (node2 not in self.adjList[node1] and node1 not in self.adjList[node2]):
             self.adjList[node1].append(node2)
@@ -165,7 +167,7 @@ class Maze:
         nodes = deque([self.start])
 
         parent = {}
-        while (nodes):
+        while nodes:
             #pop node from queue 
             currentnode = nodes.popleft()
             
@@ -185,7 +187,51 @@ class Maze:
         # Trim path from beginning to end and draw path on image
         endofpath = path.index(self.finish) + 1
         path = path[0:endofpath]
+        # print(path)
         self.drawPath(path)
+
+    # A* Search to solve path from start to end node using manhattan distance as heuristic
+    def astarPathFinder(self):
+        open_set = queue.PriorityQueue() #priority queue to store tuples of (score, node)
+        open_set.put((0, self.start))
+        came_from = {}
+        # Cost so far
+        g_score = {}
+        came_from[self.start] = None
+        g_score[self.start] = 0
+
+        # While there are still elements in queue
+        while not open_set.empty():
+            current_node_priority, current_node = open_set.get()
+            
+            if (current_node == self.finish):
+                break
+
+            for next_node in self.adjList[current_node]:
+                new_score = g_score[current_node] + self.distBetweenTwoNodes(current_node, next_node)
+                if next_node not in g_score or new_score < g_score[next_node]:
+                    g_score[next_node] = new_score
+                    # Heuristical priority using manhattan distance
+                    priority = new_score + self.manhattanDistanceBetweenTwoNodes(next_node, self.finish)
+                    open_set.put((priority, next_node))
+                    came_from[next_node] = current_node
+        
+        # Construct path from parent dictionary by backtracing from finishing nodes
+        path = []
+
+        key = self.finish
+        while key is not None:
+            path.append(key)
+            key = came_from.get(key)
+
+        # Reverse the path
+        path.reverse() 
+        self.drawPath(path)
+            
+    def manhattanDistanceBetweenTwoNodes(self, node1, node2):
+        x1,y1 = self.translateFromNodeNumberToHeightWidth(node1)
+        x2,y2 = self.translateFromNodeNumberToHeightWidth(node2)
+        return abs(x1 - x2) + abs(y1 - y2)
 
     def drawPath(self, path):
         for i in range(len(path)):
@@ -222,6 +268,26 @@ class Maze:
                 if (self.translateFromHeightWidthToNodeNumber(currentheight,currentwidth) == path[-1]):
                     self.markPixelAsRed(currentheight, currentwidth)
 
+    def distBetweenTwoNodes(self, node1, node2):
+        node1height,node1width = self.translateFromNodeNumberToHeightWidth(node1)
+        node2height,node2width = self.translateFromNodeNumberToHeightWidth(node2)
+        distance = 0
+        # Horizontal adjacency
+        if (node1height == node2height):
+            if (node1width < node2width):
+                distance = node2width - node1width
+            else:
+                distance = node1width - node2width
+        # Vertical adjacency
+        elif (node1width == node2width):
+            if(node1height < node2height):
+                distance = node2height - node1height
+            else:
+                distance = node1height - node2height
+        
+        # Is distance to another point, change to distance between two points
+        distance = distance - 1
+        return distance
 
     def markPixelAsRed(self, height, width):
         self.myimage.putpixel((width,height),(247,47,47))
