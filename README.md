@@ -18,6 +18,8 @@ Runtime: --- 18.56 seconds ---
 
 
 ## Notes
-To run any of the algorithms which have been implemented change the second argument of the python program to (a*,bfs)
+To run any of the algorithms which have been implemented change the second argument of the python program to (a*,bfs).
+
 This project still needs to be improved and refactored to be efficient. 
+
 For now the main efficiency improvement that is of not is using an adjacency list instead of an adjacency matrix so it can handle larger mazes. 
